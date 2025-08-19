@@ -14,7 +14,11 @@ import (
 
 func GenerateToken(user *user.User) (string, error) {
 	if user == nil {
-		return "", errors.New("user cannot be nil")
+		return "", errors.New("User cannot be nil")
+	}
+
+	if len(user.Username) < 1 || len(user.AccessRoles) < 1 {
+		return "", errors.New("Username and AccessRoles must be present")
 	}
 
 	secret := os.Getenv("AUTH_JWT_SECRET_KEY")
