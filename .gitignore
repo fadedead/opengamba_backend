@@ -1,5 +1,2 @@
-# go env
+tmp/
 .env
-
-# air
-/tmp
