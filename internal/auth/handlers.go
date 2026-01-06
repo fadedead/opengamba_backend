@@ -4,30 +4,45 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/markbates/goth/gothic"
 )
 
 func Login(res http.ResponseWriter, req *http.Request) {
+	provider := req.PathValue("provider")
+	q := req.URL.Query()
+	q.Add("provider", provider)
+	req.URL.RawQuery = q.Encode()
+
 	if _, err := gothic.CompleteUserAuth(res, req); err == nil {
-		http.Redirect(res, req, frontendUrl+"/home", http.StatusFound)
+		http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/home", http.StatusFound)
 	} else {
 		gothic.BeginAuthHandler(res, req)
 	}
 }
 
 func LoginCallback(res http.ResponseWriter, req *http.Request) {
-	_, err := gothic.CompleteUserAuth(res, req)
+	provider := req.PathValue("provider")
+	q := req.URL.Query()
+	q.Add("provider", provider)
+	req.URL.RawQuery = q.Encode()
+
+	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
 		slog.Error("Error in login callback", "error", err)
-		http.Redirect(res, req, frontendUrl+"/login?error=auth_failed", http.StatusTemporaryRedirect)
+		http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/login?error=auth_failed", http.StatusTemporaryRedirect)
 		return
 	}
 
-	http.Redirect(res, req, frontendUrl+"/home", http.StatusFound)
+	slog.Info("User logged in", "user", user.Email)
+	// TODO: save user to DB
+
+	http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/home", http.StatusFound)
 }
 
 func Logout(res http.ResponseWriter, req *http.Request) {
+	frontendUrl := os.Getenv("FRONTEND_URL")
 	gothic.Logout(res, req)
 	res.Header().Set("Location", frontendUrl)
 	res.WriteHeader(http.StatusTemporaryRedirect)
