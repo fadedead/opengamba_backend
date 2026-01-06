@@ -19,9 +19,7 @@ func main() {
 	auth.SetupAuth()
 
 	srv := server.NewServer("8080")
-
 	slog.Info("Server starting...")
-
 	err = srv.ListenAndServe()
 	if err != nil {
 		slog.Error("Failed to start server", "error", err)

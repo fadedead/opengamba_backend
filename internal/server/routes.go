@@ -8,15 +8,13 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	mux := http.NewServeMux()
+	mainMux := http.NewServeMux()
 
-	// Auth routes
-	mux.HandleFunc("GET /auth/{provider}", auth.Login)
-	mux.HandleFunc("GET /auth/{provider}/callback", auth.LoginCallback)
-	mux.HandleFunc("GET /logout/{provider}", auth.Logout)
-	mux.HandleFunc("GET /auth/me", auth.GetUserSession)
+	// Auth handlers
+	authHanlders := auth.Routes()
+	mainMux.Handle("/auth/", http.StripPrefix("/auth", authHanlders))
 
-	return s.enableCORS(mux)
+	return s.enableCORS(mainMux)
 }
 
 func (s *Server) enableCORS(next http.Handler) http.Handler {
