@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/fadedead/opengamba_backend/internal/auth"
+	"github.com/fadedead/opengamba_backend/internal/database"
 	"github.com/fadedead/opengamba_backend/internal/server"
 	"github.com/joho/godotenv"
 )
@@ -12,7 +13,13 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		slog.Error("Err", "error", err)
+		slog.Error("Error loading dotenv", "error", err)
+		os.Exit(1)
+	}
+
+	err = database.ConnectToPostgresDB()
+	if err != nil {
+		slog.Error("Error connecting to Postgres", "error", err)
 		os.Exit(1)
 	}
 
