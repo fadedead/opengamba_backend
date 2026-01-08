@@ -5,14 +5,16 @@ import (
 	"os"
 
 	"github.com/fadedead/opengamba_backend/internal/auth"
+	"github.com/fadedead/opengamba_backend/internal/user"
+	"gorm.io/gorm"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
 	mainMux := http.NewServeMux()
 
-	// Auth handlers
-	authHanlders := auth.Routes()
-	mainMux.Handle("/auth/", http.StripPrefix("/auth", authHanlders))
+	// Add your handler constructor here
+	userService := setupUserHandler(s.postgresDB, mainMux)
+	setupAuthHandler(userService, mainMux)
 
 	return s.enableCORS(mainMux)
 }
@@ -31,4 +33,21 @@ func (s *Server) enableCORS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func setupAuthHandler(userService user.Service, mainMux *http.ServeMux) auth.Service {
+	auth.SetupAuth()
+	authService := auth.NewService(userService)
+	authHandler := auth.NewHandler(authService)
+	mainMux.Handle("/auth/", http.StripPrefix("/auth", authHandler.Routes()))
+	return authService
+}
+
+func setupUserHandler(db *gorm.DB, mainMux *http.ServeMux) user.Service {
+	userRepo := user.NewRepository(db)
+	userService := user.NewService(userRepo)
+	userHandler := user.NewHandler(userService)
+
+	mainMux.Handle("/user/", http.StripPrefix("/user", userHandler.Routes()))
+	return userService
 }

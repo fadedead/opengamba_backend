@@ -9,7 +9,34 @@ import (
 	"github.com/markbates/goth/gothic"
 )
 
-func Login(res http.ResponseWriter, req *http.Request) {
+type Handler interface {
+	Routes()
+	Login()
+	LoginCallback()
+	Logout()
+	GetUserSession()
+}
+
+type handler struct {
+	service Service
+}
+
+func NewHandler(service Service) *handler {
+	return &handler{service: service}
+}
+
+func (handler *handler) Routes() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /login/{provider}", handler.Login)
+	mux.HandleFunc("GET /callback/{provider}", handler.LoginCallback)
+	mux.HandleFunc("GET /logout/{provider}", handler.Logout)
+	mux.HandleFunc("GET /me", handler.GetUserSession)
+
+	return mux
+}
+
+func (handler *handler) Login(res http.ResponseWriter, req *http.Request) {
 	provider := req.PathValue("provider")
 	q := req.URL.Query()
 	q.Add("provider", provider)
@@ -22,7 +49,7 @@ func Login(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func LoginCallback(res http.ResponseWriter, req *http.Request) {
+func (handler *handler) LoginCallback(res http.ResponseWriter, req *http.Request) {
 	provider := req.PathValue("provider")
 	q := req.URL.Query()
 	q.Add("provider", provider)
@@ -35,20 +62,24 @@ func LoginCallback(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	_, err = handler.service.SaveUserToDatabase(user)
+	if err != nil {
+		slog.Error("Error saving user after callback", "error", err)
+		http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/login?error=login_failed", http.StatusTemporaryRedirect)
+	}
 	slog.Info("User logged in", "user", user.Email)
-	// TODO: save user to DB
 
 	http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/home", http.StatusFound)
 }
 
-func Logout(res http.ResponseWriter, req *http.Request) {
+func (handler *handler) Logout(res http.ResponseWriter, req *http.Request) {
 	frontendUrl := os.Getenv("FRONTEND_URL")
 	gothic.Logout(res, req)
 	res.Header().Set("Location", frontendUrl)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func GetUserSession(res http.ResponseWriter, req *http.Request) {
+func (handler *handler) GetUserSession(res http.ResponseWriter, req *http.Request) {
 	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
 		res.Header().Set("Content-Type", "application/json")

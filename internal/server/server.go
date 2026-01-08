@@ -3,14 +3,17 @@ package server
 import (
 	"net/http"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Server struct {
-	port string
+	port       string
+	postgresDB *gorm.DB
 }
 
-func NewServer(port string) *http.Server {
-	srv := &Server{port: port}
+func NewServer(port string, postgresDB *gorm.DB) *http.Server {
+	srv := &Server{port: port, postgresDB: postgresDB}
 
 	return &http.Server{
 		Addr:         ":" + port,

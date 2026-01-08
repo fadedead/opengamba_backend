@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func ConnectToPostgresDB() error {
+func ConnectToPostgresDB() (*gorm.DB, error) {
 	host := os.Getenv("POSTGRES_HOST")
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
@@ -16,9 +16,9 @@ func ConnectToPostgresDB() error {
 	port := os.Getenv("POSTGRES_PORT")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, databaseName, port)
-	_, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return db, nil
 }
