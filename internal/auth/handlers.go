@@ -17,26 +17,31 @@ type Handler interface {
 	GetUserSession()
 }
 
-type handler struct {
+type AuthHandler struct {
 	service Service
 }
 
-func NewHandler(service Service) *handler {
-	return &handler{service: service}
+func (h *AuthHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /auth/login/{provider}", h.Login)
+	mux.HandleFunc("GET /auth/callback/{provider}", h.LoginCallback)
+	mux.HandleFunc("GET /auth/logout/{provider}", h.Logout)
+	mux.HandleFunc("GET /auth/me", h.GetUserSession)
 }
 
-func (handler *handler) Routes() http.Handler {
+func NewHandler(service Service) *AuthHandler {
+	return &AuthHandler{service: service}
+}
+
+func (h *AuthHandler) Routes() http.Handler {
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /login/{provider}", handler.Login)
-	mux.HandleFunc("GET /callback/{provider}", handler.LoginCallback)
-	mux.HandleFunc("GET /logout/{provider}", handler.Logout)
-	mux.HandleFunc("GET /me", handler.GetUserSession)
-
+	mux.HandleFunc("GET /login/{provider}", h.Login)
+	mux.HandleFunc("GET /callback/{provider}", h.LoginCallback)
+	mux.HandleFunc("GET /logout/{provider}", h.Logout)
+	mux.HandleFunc("GET /me", h.GetUserSession)
 	return mux
 }
 
-func (handler *handler) Login(res http.ResponseWriter, req *http.Request) {
+func (h *AuthHandler) Login(res http.ResponseWriter, req *http.Request) {
 	provider := req.PathValue("provider")
 	q := req.URL.Query()
 	q.Add("provider", provider)
@@ -49,7 +54,7 @@ func (handler *handler) Login(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (handler *handler) LoginCallback(res http.ResponseWriter, req *http.Request) {
+func (h *AuthHandler) LoginCallback(res http.ResponseWriter, req *http.Request) {
 	provider := req.PathValue("provider")
 	q := req.URL.Query()
 	q.Add("provider", provider)
@@ -62,7 +67,7 @@ func (handler *handler) LoginCallback(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	_, err = handler.service.SaveUserToDatabase(user)
+	_, err = h.service.SaveUserToDatabase(user)
 	if err != nil {
 		slog.Error("Error saving user after callback", "error", err)
 		http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/login?error=login_failed", http.StatusTemporaryRedirect)
@@ -72,14 +77,14 @@ func (handler *handler) LoginCallback(res http.ResponseWriter, req *http.Request
 	http.Redirect(res, req, os.Getenv("FRONTEND_URL")+"/home", http.StatusFound)
 }
 
-func (handler *handler) Logout(res http.ResponseWriter, req *http.Request) {
+func (h *AuthHandler) Logout(res http.ResponseWriter, req *http.Request) {
 	frontendUrl := os.Getenv("FRONTEND_URL")
 	gothic.Logout(res, req)
 	res.Header().Set("Location", frontendUrl)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (handler *handler) GetUserSession(res http.ResponseWriter, req *http.Request) {
+func (h *AuthHandler) GetUserSession(res http.ResponseWriter, req *http.Request) {
 	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
 		res.Header().Set("Content-Type", "application/json")

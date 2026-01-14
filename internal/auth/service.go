@@ -49,9 +49,9 @@ func (s *service) SaveUserToDatabase(gothUser goth.User) (*user.User, error) {
 	user := &user.User{
 		Email: gothUser.Email,
 	}
-	user, err := s.userService.SaveUser(user)
+	savedUser, err := s.userService.Save(user)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &savedUser, nil
 }

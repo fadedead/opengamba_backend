@@ -3,18 +3,20 @@ package server
 import (
 	"net/http"
 	"os"
-
-	"github.com/fadedead/opengamba_backend/internal/auth"
-	"github.com/fadedead/opengamba_backend/internal/user"
-	"gorm.io/gorm"
 )
+
+// RouteRegistrar interface to be implemented by each service package
+type RouteRegistrar interface {
+	RegisterRoutes(mux *http.ServeMux)
+}
 
 func (s *Server) RegisterRoutes() http.Handler {
 	mainMux := http.NewServeMux()
 
-	// Add your handler constructor here
-	userService := setupUserHandler(s.postgresDB, mainMux)
-	setupAuthHandler(userService, mainMux)
+	// Use StripPrefix approach to avoid route conflicts
+	mainMux.Handle("/user/", http.StripPrefix("/user", s.userHandler.Routes()))
+	mainMux.Handle("/auth/", http.StripPrefix("/auth", s.authHandler.Routes()))
+	mainMux.Handle("/rewards/", http.StripPrefix("/rewards", s.rewardHandler.Routes()))
 
 	return s.enableCORS(mainMux)
 }
@@ -33,21 +35,4 @@ func (s *Server) enableCORS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func setupAuthHandler(userService user.Service, mainMux *http.ServeMux) auth.Service {
-	auth.SetupAuth()
-	authService := auth.NewService(userService)
-	authHandler := auth.NewHandler(authService)
-	mainMux.Handle("/auth/", http.StripPrefix("/auth", authHandler.Routes()))
-	return authService
-}
-
-func setupUserHandler(db *gorm.DB, mainMux *http.ServeMux) user.Service {
-	userRepo := user.NewRepository(db)
-	userService := user.NewService(userRepo)
-	userHandler := user.NewHandler(userService)
-
-	mainMux.Handle("/user/", http.StripPrefix("/user", userHandler.Routes()))
-	return userService
 }

@@ -4,19 +4,39 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fadedead/opengamba_backend/internal/auth"
+	"github.com/fadedead/opengamba_backend/internal/rewards"
+	"github.com/fadedead/opengamba_backend/internal/user"
 	"gorm.io/gorm"
 )
 
-type Server struct {
-	port       string
-	postgresDB *gorm.DB
+type Config struct {
+	Port          string
+	DB            *gorm.DB
+	UserHandler   *user.Handler
+	AuthHandler   *auth.AuthHandler
+	RewardHandler *rewards.Handler
 }
 
-func NewServer(port string, postgresDB *gorm.DB) *http.Server {
-	srv := &Server{port: port, postgresDB: postgresDB}
+type Server struct {
+	port          string
+	postgresDB    *gorm.DB
+	userHandler   *user.Handler
+	authHandler   *auth.AuthHandler
+	rewardHandler *rewards.Handler
+}
+
+func NewServer(config Config) *http.Server {
+	srv := &Server{
+		port:          config.Port,
+		postgresDB:    config.DB,
+		userHandler:   config.UserHandler,
+		authHandler:   config.AuthHandler,
+		rewardHandler: config.RewardHandler,
+	}
 
 	return &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + config.Port,
 		Handler:      srv.RegisterRoutes(),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

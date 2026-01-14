@@ -1,4 +1,4 @@
-package user
+package rewards
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ type Handler struct {
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /user/{id}", h.GetUserWithId)
+	mux.HandleFunc("GET /rewards/user/{id}", h.GetRewardByUserID)
 }
 
 func NewHandler(service Service) *Handler {
@@ -20,11 +20,11 @@ func NewHandler(service Service) *Handler {
 
 func (h *Handler) Routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{id}", h.GetUserWithId)
+	mux.HandleFunc("GET /user/{id}", h.GetRewardByUserID)
 	return mux
 }
 
-func (h *Handler) GetUserWithId(res http.ResponseWriter, req *http.Request) {
+func (h *Handler) GetRewardByUserID(res http.ResponseWriter, req *http.Request) {
 	userIdStr := req.PathValue("id")
 	userId, err := strconv.ParseUint(userIdStr, 10, 32)
 	if err != nil {
@@ -32,12 +32,12 @@ func (h *Handler) GetUserWithId(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetById(uint(userId))
+	reward, err := h.service.GetByUserId(uint(userId))
 	if err != nil {
-		http.Error(res, "User not found", http.StatusNotFound)
+		http.Error(res, "Reward not found for user", http.StatusNotFound)
 		return
 	}
 
 	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(user)
+	json.NewEncoder(res).Encode(reward)
 }
