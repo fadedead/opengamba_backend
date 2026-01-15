@@ -10,10 +10,6 @@ type Handler struct {
 	service Service
 }
 
-func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /rewards/user/{id}", h.GetRewardByUserID)
-}
-
 func NewHandler(service Service) *Handler {
 	return &Handler{service: service}
 }

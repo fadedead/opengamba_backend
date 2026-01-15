@@ -9,6 +9,7 @@ import (
 	"github.com/fadedead/opengamba_backend/internal/rewards"
 	"github.com/fadedead/opengamba_backend/internal/server"
 	"github.com/fadedead/opengamba_backend/internal/user"
+	"github.com/fadedead/opengamba_backend/internal/websocket"
 	"github.com/joho/godotenv"
 	"github.com/pressly/goose"
 )
@@ -55,6 +56,10 @@ func main() {
 	rewardService := rewards.NewService(rewardRepository)
 	rewardHandler := rewards.NewHandler(rewardService)
 
+	// Initialize websocket service dependencies
+	socketService := websocket.NewService(userService)
+	socketHandler := websocket.NewHandler(socketService)
+
 	// Create server with all dependencies injected
 	config := server.Config{
 		Port:          "8080",
@@ -62,6 +67,7 @@ func main() {
 		UserHandler:   userHandler,
 		AuthHandler:   authHandler,
 		RewardHandler: rewardHandler,
+		SocketHandler: socketHandler,
 	}
 	srv := server.NewServer(config)
 	slog.Info("Server starting...")

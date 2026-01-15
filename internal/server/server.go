@@ -7,6 +7,7 @@ import (
 	"github.com/fadedead/opengamba_backend/internal/auth"
 	"github.com/fadedead/opengamba_backend/internal/rewards"
 	"github.com/fadedead/opengamba_backend/internal/user"
+	"github.com/fadedead/opengamba_backend/internal/websocket"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,7 @@ type Config struct {
 	UserHandler   *user.Handler
 	AuthHandler   *auth.AuthHandler
 	RewardHandler *rewards.Handler
+	SocketHandler *websocket.Handler
 }
 
 type Server struct {
