@@ -87,6 +87,7 @@ func (h *AuthHandler) Logout(res http.ResponseWriter, req *http.Request) {
 func (h *AuthHandler) GetUserSession(res http.ResponseWriter, req *http.Request) {
 	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
+		slog.Error("Error getting user session", "error", err)
 		res.Header().Set("Content-Type", "application/json")
 		res.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(res).Encode(map[string]string{"error": "Unauthorized"})
